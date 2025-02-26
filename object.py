@@ -7,12 +7,14 @@ boxes = []
 confidences = []
 class_ids = []
 
-# COCO 클래스 로드
+# COCO 클래스 읽기
 with open("coco.names", "r") as f:
-    class_names = [line.strip() for line in f.readlines()]
+    classes = [line.strip() for line in f.readlines()] # 리스트 컴프리헨션 문법
 
-# ONNX YOLO 모델 로드
-session = ort.InferenceSession("yolov8x.onnx", providers=["CUDAExecutionProvider"])
+# ONNX YOLO 모델 로드 providers=["CUDAExecutionProvider"] CUDA 환경
+session = ort.InferenceSession("yolov8l.onnx", providers=["CUDAExecutionProvider"])
+
+print(session.get_providers())
 
 # 입력 텐서 정보 가져오기
 input_name = session.get_inputs()[0].name
@@ -33,10 +35,10 @@ while cap.isOpened():
     if not ret:
         break
 
-    # YOLO 모델 입력 크기로 리사이징 
+    # YOLO 모델 입력 크기로 전처리
     size = 640 # 320 416 640 1280
     img = cv2.resize(frame, (size, size)) 
-    img = img / 255.0  # 정규화
+    img = img / 255.0  # 정규화 0~1
     img = img.transpose(2, 0, 1)
     # (H, W, C) → (C, H, W) 
     # frame의 attribute 순서를 RGB채널, 높이, 너비 순으로 변환
@@ -81,7 +83,7 @@ while cap.isOpened():
     for i in range(len(boxes)):
         if i in indexes:
             x, y, w, h = boxes[i]
-            label = f'{str(class_names[class_ids[i]])} : {confidences[i]:.2f}'
+            label = f'{str(classes[class_ids[i]])} : {confidences[i]:.2f}'
             # 클래스 이름 표시
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
             cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)

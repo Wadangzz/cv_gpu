@@ -5,7 +5,6 @@ from mediapipe import solutions
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
-import os
 
 
 class handtracking:
@@ -23,7 +22,7 @@ class handtracking:
         self.min_tracking_confidence = 0.5
 
         self.options = vision.HandLandmarkerOptions(
-            base_options = python.BaseOptions(model_asset_path = "hand_landmarker.task"),
+            base_options = python.BaseOptions(model_asset_path = "./MyModule/hand_landmarker.task"),
             num_hands = self.num_hands,
             min_hand_detection_confidence = self.min_hand_detection_confidence,
             min_hand_presence_confidence = self.min_hand_presence_confidence,
@@ -34,7 +33,7 @@ class handtracking:
 
     def preprogress(self,frame):  
         
-        image = cv2.resize(frame,(640,360))
+        image = cv2.resize(frame,(640,480))
         image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
         image = mp.Image(image_format = mp.ImageFormat.SRGB, data = image)
 

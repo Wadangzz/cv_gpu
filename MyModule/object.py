@@ -12,7 +12,7 @@ class Object():
             self.classes = [line.strip() for line in f.readlines()] # 리스트 컴프리헨션 문법
 
         # ONNX YOLO 모델 로드 providers=["CUDAExecutionProvider"] CUDA 환경
-        self.session = ort.InferenceSession("yolov8l.onnx", providers=["CUDAExecutionProvider"])
+        self.session = ort.InferenceSession("./MyModule/yolov8l.onnx", providers=["CUDAExecutionProvider"])
 
         print(self.session.get_providers())
 
@@ -27,7 +27,7 @@ class Object():
     def preprocess(self,_frame):
         
     # YOLO 모델 입력 크기로 전처리
-        size = 640 # 320 416 640 1280
+        size = 512 # 320 416 640 1280
         img = cv2.resize(_frame, (size, size)) 
         img = img / 255.0  # 정규화 0~1
         img = img.transpose(2, 0, 1)

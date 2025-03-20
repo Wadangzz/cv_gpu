@@ -8,6 +8,7 @@ model = YOLO('./MyModule/mytrained3.pt')
 # hand = ml.handtracking()
 # obj = object.Object()
     
+
 # 비디오 파일 로드
 cap = cv2.VideoCapture(0)
 fps = cap.get(cv2.CAP_PROP_FPS)
@@ -44,7 +45,7 @@ while cap.isOpened():
     # img = obj.preprocess(frame)
 
     # obj.detection(img,frame)
-  
+
     # 화면 출력
     
     cv2.imshow("YOLOv8 Detection", results[0].plot())

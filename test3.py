@@ -7,7 +7,7 @@ from ultralytics import YOLO
 from ultralytics.engine.results import Results
 
 
-db = 'C:/Users/wadangzz/Desktop/Wadangzz/wadangzz/PlcModbus/plc_data.db'
+db = 'C:/Users/user/Documents/GitHub/wadangzz/PlcModbus/plc_data.db'
 model = YOLO('./MyModule/yolov8l.pt')
 # hand = ml.handtracking()
 # obj = object.Object()
@@ -16,12 +16,16 @@ while True:
 
     with sqlite3.connect(db) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT address, value FROM DigitalTags WHERE address = ?", ('M100',))
+        cursor.execute("SELECT address, value FROM DigitalTags WHERE address = ?", ('M16',))
         row = cursor.fetchone()
         print(row)
         
         if row[1] == 1:
-            cap = cv2.VideoCapture('./test/highway.mp4')
+
+            inspections = []
+            annotated_frame = []
+
+            cap = cv2.VideoCapture(0)
             fps = cap.get(cv2.CAP_PROP_FPS)
             delay = int(1000 / fps)
 
@@ -31,16 +35,35 @@ while True:
                     break
                 
                 height, width, _ = frame.shape
-                img = cv2.GaussianBlur(frame, (5, 5), 0)
-                sharpening = cv2.addWeighted(frame, 1.5, img, -0.5, 0)
-                results = model.predict(img, conf = 0.3, iou = 0.5)
+                for i in range(5):
+                    inspections.append(frame)
 
-                cv2.imshow("YOLOv8 Detection", results[0].plot())
-                if cv2.waitKey(delay) & 0xFF == ord('q'):  # 'q' 누르면 종료
-                    break
+                for imgs in inspections:
+                    img = cv2.GaussianBlur(imgs, (5, 5), 0)
+                    sharpening = cv2.addWeighted(imgs, 1.5, img, -0.5, 0)
+                
+                    results = model.predict(sharpening, conf=0.3, iou=0.5)
+                    annotated_frame.append(results[0].plot())
+
+                print(annotated_frame)
+
+                for result in annotated_frame:
+                    print(result)
+                    cv2.imshow("YOLOv8 Detection", result)
+                    time.sleep(1)
+                       
+                break
 
             cap.release()
             cv2.destroyAllWindows()
+
+                    # cv2.imshow("YOLOv8 Detection", annotated_frame)
+                    # if cv2.waitKey(delay) & 0xFF == ord('q'):
+                    #     break
+
+            # cap.release()
+            # cv2.destroyAllWindows()
         else:
+            print('비전 검사 대기중')
             time.sleep(1)
             continue

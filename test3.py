@@ -44,18 +44,18 @@ while True:
                 
                     results = model.predict(sharpening, conf=0.3, iou=0.5)
                     annotated_frame.append(results[0].plot())
+                    time.sleep(1)
 
                 print(annotated_frame)
-
-                for result in annotated_frame:
-                    print(result)
-                    cv2.imshow("YOLOv8 Detection", result)
-                    time.sleep(1)
+                
+                # for result in annotated_frame:
+                #     print(result)
+                #     cv2.imshow("YOLOv8 Detection", result)
+                #     time.sleep(1)
                        
                 break
-
-            cap.release()
-            cv2.destroyAllWindows()
+          
+            # cv2.destroyAllWindows()
 
                     # cv2.imshow("YOLOv8 Detection", annotated_frame)
                     # if cv2.waitKey(delay) & 0xFF == ord('q'):
@@ -63,6 +63,8 @@ while True:
 
             # cap.release()
             # cv2.destroyAllWindows()
+            
+            cap.release()
         else:
             print('비전 검사 대기중')
             time.sleep(1)

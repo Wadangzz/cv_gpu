@@ -23,7 +23,7 @@ while cap.isOpened():
     hand_landmarks_list = detection_result.hand_landmarks
 
     cv2.polylines(annotated_img, [hand.roi_polygon], isClosed=True, color=(255, 0, 0), thickness=2)
-    cv2.imshow('Hand_Tracking',cv2.cvtColor(annotated_img,cv2.COLOR_RGB2BGR))
+    cv2.imshow('CCTV',cv2.cvtColor(annotated_img,cv2.COLOR_RGB2BGR))
     if len(hand_landmarks_list) > 0:
         hand_points = [4, 7, 11, 15, 20]
         found_inside = False

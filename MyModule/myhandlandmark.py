@@ -22,8 +22,8 @@ class handtracking:
         self.min_tracking_confidence = 0.5
         self.roi_polygon = np.array([
                             [0, 0],
-                            [312, 0],
-                            [640, 312],
+                            [480, 0],
+                            [640, 120],
                             [640, 480],
                             [100, 480]
                         ], dtype=np.int32)
@@ -92,5 +92,5 @@ class handtracking:
             
         return annotated_image, width, height
     
-    def is_point_in_roi(self,x, y):
+    def is_point_in_roi(self, x, y):
         return cv2.pointPolygonTest(self.roi_polygon, (x, y), False) >= 0

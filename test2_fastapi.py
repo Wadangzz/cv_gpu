@@ -45,6 +45,7 @@ if __name__ == "__main__":
         if not ret:
             break
 
+        emerg_stop = pymc3e.batchread_bitunits(headdevice="M504", readsize=1)[0]
         img = hand.preprogress(frame)
         detection_result = hand.detector.detect(img)
         annotated_img, width, height = hand.draw_landmarks_on_image(img.numpy_view(), detection_result)
@@ -66,7 +67,7 @@ if __name__ == "__main__":
                     found_inside = True
                     break
 
-            if found_inside:
+            if (found_inside and emerg_stop == 1):
                 print("손이 ROI 안에 있음")
                 pymc3e.batchwrite_wordunits(headdevice="D8", values=[1]) 
 

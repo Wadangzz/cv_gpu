@@ -22,8 +22,8 @@ class handtracking:
         self.min_tracking_confidence = 0.5
         self.roi_polygon = np.array([
                             [0, 0],
-                            [480, 0],
-                            [640, 120],
+                            [360, 0],
+                            [640, 240],
                             [640, 480],
                             [100, 480]
                         ], dtype=np.int32)

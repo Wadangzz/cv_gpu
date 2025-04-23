@@ -51,13 +51,13 @@ if __name__ == "__main__":
         ret, frame = cap.read()
         if not ret:
             break
-
+        # bright_img = cv2.convertScaleAbs(frame, alpha=1.0, beta=60)
         img = cv2.GaussianBlur(frame, (5, 5), 0)
         sharpening = cv2.addWeighted(frame, 1.5, img, -0.5, 0)
-        results = model.predict(sharpening, conf= 0.6, iou=0.5)
+        results = model.predict(frame, conf= 0.65, iou=0.5)
         boxes = results[0].boxes
         
-        cv2.rectangle(sharpening, (roi[0], roi[1]), (roi[2], roi[3]), (0, 255, 255), 2)
+        cv2.rectangle(frame, (roi[0], roi[1]), (roi[2], roi[3]), (0, 255, 255), 2)
 
         if boxes.cls.numel() > 0: # 객체가 감지되면
             for box in boxes.xywh.cpu().numpy()[:2]: # 객체의 중심 좌표를 list compressison

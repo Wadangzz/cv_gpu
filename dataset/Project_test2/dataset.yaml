@@ -1,0 +1,8 @@
+path: \\?\C:\Users\user\Documents\GitHub\cv_gpu\datasets\Project_test2
+train: images/train
+val: images/val
+test: images/test
+
+names:
+    0: Dust
+    1: Scratch

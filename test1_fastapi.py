@@ -73,23 +73,30 @@ if __name__ == "__main__":
             # D16이 36일 때 검사 진행 중
             status = pymc3e.batchread_wordunits(headdevice="D16",readsize=1) 
             if status[0] == 36:
-                if boxes.cls.numel() > 0: # 객체가 1개라도 감지되면
-                    for box in boxes.xywh.cpu().numpy()[:2]: # 객체의 중심 좌표를 list compressison
-                        if is_center_in_roi(box,roi): # 객체의 boungind box가 roi 안에 있다면
-                            pymc3e.batchwrite_wordunits(headdevice="D2001", values=[1]) # PLC D2001에 1을 쓴다
-                    for cls in boxes.cls.cpu().numpy(): # cls ID를 numpy 배열로 변환
-                        if cls == 0:
-                            col_name = ng[0]["id"] # Dust
-                        elif cls == 1:
-                            col_name = ng[1]["id"] # Scratch
-                        with conn.cursor() as cursor:
+                with conn.cursor() as cursor:
+                    if boxes.cls.numel() > 0: # 객체가 1개라도 감지되면
+                        for box in boxes.xywh.cpu().numpy()[:2]: # 객체의 중심 좌표를 list compressison
+                            if is_center_in_roi(box,roi): # 객체의 boungind box가 roi 안에 있다면
+                                pymc3e.batchwrite_wordunits(headdevice="D2001", values=[1]) # PLC D2001에 1을 쓴다
+                        for cls in boxes.cls.cpu().numpy(): # cls ID를 numpy 배열로 변환
+                            if cls == 0:
+                                col_name = ng[0]["id"] # Dust
+                            elif cls == 1:
+                                col_name = ng[1]["id"] # Scratch
                             cursor.execute(
-                                f"UPDATE productnum SET {col_name} = %s, inspection = %s LIMIT 1", (1, 'NG'))
-                            conn.commit()
-                else:
-                    with conn.cursor() as cursor:
+                                f"""
+                                UPDATE productnum SET {col_name} = %s
+                                WHERE inspection = 'Not Yet' AND {col_name} = 0 ORDER BY id ASC LIMIT 1""", (1,))
                         cursor.execute(
-                            "UPDATE productnum SET inspection = %s LIMIT 1", ('OK',))
+                            """
+                            UPDATE productnum SET inspection = %s 
+                            WHERE inspection = 'Not Yet' ORDER BY id ASC LIMIT 1""", ('NG',))
+                        conn.commit()  # 여기서 한 번만 commit
+                    else:   
+                        cursor.execute(
+                            """
+                            UPDATE productnum SET inspection = %s 
+                            WHERE inspection = 'Not Yet' ORDER BY id ASC LIMIT 1""", ('OK',))
                         conn.commit()
             
             inspection = pymc3e.batchread_wordunits(headdevice="D2001",readsize=1)       
@@ -101,11 +108,11 @@ if __name__ == "__main__":
                 cursor.execute(
                     f"""
                     INSERT INTO {ins_result} 
-                    (ProductCode, Model, Dust, Scratch, inspection, timestamp)
-                    SELECT ProductCode, Model, Dust, Scratch, inspection, timestamp
-                    FROM productnum WHERE inspection = %s""", (ins_result,))
+                    (ProductCode, Model, Dust, Scratch, inspection)
+                    SELECT ProductCode, Model, Dust, Scratch, inspection
+                    FROM productnum WHERE inspection = %s LIMIT 1""", (ins_result,))
                 cursor.execute(    
-                    "DELETE FROM productnum WHERE inspection = %s", (ins_result))
+                    "DELETE FROM productnum WHERE inspection = %s LIMIT 1", (ins_result,))
                 conn.commit()
 
             annotated_image = results[0].plot()

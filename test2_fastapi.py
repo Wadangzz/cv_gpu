@@ -45,7 +45,6 @@ if __name__ == "__main__":
         if not ret:
             break
 
-        emerg_stop = pymc3e.batchread_bitunits(headdevice="M504", readsize=1)[0]
         img = hand.preprogress(frame)
         detection_result = hand.detector.detect(img)
         annotated_img, width, height = hand.draw_landmarks_on_image(img.numpy_view(), detection_result)
@@ -54,22 +53,21 @@ if __name__ == "__main__":
         cv2.polylines(annotated_img, [hand.roi_polygon], isClosed=True, color=(255, 0, 0), thickness=2)
         cv2.imshow('CCTV',cv2.cvtColor(annotated_img,cv2.COLOR_RGB2BGR))
         latest_frame = cv2.cvtColor(annotated_img, cv2.COLOR_RGB2BGR)
-        if len(hand_landmarks_list) > 0:
-            hand_points = [4, 7, 11, 15, 20]
+        if len(hand_landmarks_list) > 0: # 손이 감지 됬을 때
+            hand_points = [4, 7, 11, 15, 20] # Landmark index
             found_inside = False
 
             for point_idx in hand_points:
-                pt = hand_landmarks_list[0][point_idx]
+                pt = hand_landmarks_list[0][point_idx] # 감지된 손의 Landmark 좌표
                 pt_x = int(pt.x * 640)
                 pt_y = int(pt.y * 480)
 
-                if hand.is_point_in_roi(pt_x, pt_y):
+                if hand.is_point_in_roi(pt_x, pt_y): # Landmark 좌표가 ROI 안에 있는지 확인
                     found_inside = True
                     break
 
-            if (found_inside and emerg_stop == 1):
-                print("손이 ROI 안에 있음")
-                pymc3e.batchwrite_wordunits(headdevice="D8", values=[1]) 
+            if found_inside: # Landmark 좌표가 ROI 안에 있을 때
+                pymc3e.batchwrite_wordunits(headdevice="D8", values=[1]) # PLC D8에 1을 쓴다
 
         if cv2.waitKey(delay) & 0xFF == ord('q'):  # 'q' 누르면 종료
             break

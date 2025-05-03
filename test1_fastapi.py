@@ -54,6 +54,13 @@ if __name__ == "__main__":
             1: {"id": 'Scratch'}
         }
 
+        inspect_count = 0
+        inspected = False
+
+        INSPECTION_MODE = 36
+        INSPECTION_COMPLETE = 37
+        MAX_INSPECT_COUNT = 10
+
         model = YOLO('./runs/detect/project2_1/weights/best.pt')
         cap = cv2.VideoCapture(0)
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -63,17 +70,20 @@ if __name__ == "__main__":
             ret, frame = cap.read()
             if not ret:
                 break
-            # bright_img = cv2.convertScaleAbs(frame, alpha=1.0, beta=60)
+
             img = cv2.GaussianBlur(frame, (5, 5), 0)
             sharpening = cv2.addWeighted(frame, 1.5, img, -0.5, 0)
             results = model.predict(frame, conf= 0.65, iou=0.5)
             boxes = results[0].boxes
+            print(boxes.cls.cpu().numpy())
             
             cv2.rectangle(frame, (roi[0], roi[1]), (roi[2], roi[3]), (0, 255, 255), 2)
             # D16이 36일 때 검사 진행 중
             status = pymc3e.batchread_wordunits(headdevice="D16",readsize=1) 
-            if status[0] == 36:
+
+            if status[0] == INSPECTION_MODE and inspect_count < MAX_INSPECT_COUNT:
                 with conn.cursor() as cursor:
+                    col_name = None
                     if boxes.cls.numel() > 0: # 객체가 1개라도 감지되면
                         for box in boxes.xywh.cpu().numpy()[:2]: # 객체의 중심 좌표를 list compressison
                             if is_center_in_roi(box,roi): # 객체의 boungind box가 roi 안에 있다면
@@ -92,28 +102,37 @@ if __name__ == "__main__":
                             UPDATE productnum SET inspection = %s 
                             WHERE inspection = 'Not Yet' ORDER BY id ASC LIMIT 1""", ('NG',))
                         conn.commit()  # 여기서 한 번만 commit
+
                     else:   
                         cursor.execute(
                             """
                             UPDATE productnum SET inspection = %s 
                             WHERE inspection = 'Not Yet' ORDER BY id ASC LIMIT 1""", ('OK',))
                         conn.commit()
-            
-            inspection = pymc3e.batchread_wordunits(headdevice="D2001",readsize=1)       
-            if inspection[0] == 0:
-                ins_result = 'OK'
-            elif inspection[0] == 1:
-                ins_result = 'NG'
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    f"""
-                    INSERT INTO {ins_result} 
-                    (ProductCode, Model, Dust, Scratch, inspection)
-                    SELECT ProductCode, Model, Dust, Scratch, inspection
-                    FROM productnum WHERE inspection = %s LIMIT 1""", (ins_result,))
-                cursor.execute(    
-                    "DELETE FROM productnum WHERE inspection = %s LIMIT 1", (ins_result,))
-                conn.commit()
+
+                inspect_count += 1
+
+            if status[0] == INSPECTION_COMPLETE and inspected == False:
+                inspect_count = 0
+                inspected = True
+                inspection = pymc3e.batchread_wordunits(headdevice="D2001",readsize=1)
+                if inspection[0] == 0:
+                    ins_result = 'OK'
+                elif inspection[0] == 1:
+                    ins_result = 'NG'
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        f"""
+                        INSERT INTO {ins_result} 
+                        (ProductCode, Model, Dust, Scratch, inspection)
+                        SELECT ProductCode, Model, Dust, Scratch, inspection
+                        FROM productnum WHERE inspection = %s LIMIT 1""", (ins_result,))
+                    cursor.execute(    
+                        "DELETE FROM productnum WHERE inspection = %s LIMIT 1", (ins_result,))
+                    conn.commit()
+
+            if status[0] != INSPECTION_COMPLETE and inspected:
+                inspected = False
 
             annotated_image = results[0].plot()
             latest_frame = results[0].plot()

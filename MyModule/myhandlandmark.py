@@ -27,6 +27,12 @@ class handtracking:
                             [640, 480],
                             [100, 480]
                         ], dtype=np.int32)
+        self.roi_rect = np.array([
+                            [250, 0],
+                            [640, 0],
+                            [640, 280],
+                            [250, 280]
+                        ], dtype=np.int32)
 
         self.options = vision.HandLandmarkerOptions(
             base_options = python.BaseOptions(model_asset_path = "./MyModule/hand_landmarker.task"),
@@ -94,3 +100,6 @@ class handtracking:
     
     def is_point_in_roi(self, x, y):
         return cv2.pointPolygonTest(self.roi_polygon, (x, y), False) >= 0
+    
+    def is_point_in_rect(self, x, y):
+        return cv2.pointPolygonTest(self.roi_rect, (x, y), False) >= 0

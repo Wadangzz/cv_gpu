@@ -1,4 +1,6 @@
 # 🧠 cv_gpu
+![image](https://github.com/user-attachments/assets/478da94d-e97d-4038-90a4-9be0680d7c22)
+
 
 ## 📘 프로젝트 개요
 

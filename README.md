@@ -4,7 +4,7 @@
 
 **cv_gpu**는 실시간 영상 기반의 품질 검사 및 안전 시스템으로,  
 YOLO 객체 인식과 MediaPipe 손 감지를 통해 자동화 라인에서 불량 검출 및 안전 제어를 수행하며,  
-PLC 연동과 DB 기록, 웹 시각화까지 포함한 **풀스택 Computer Vision + 제어 시스템**입니다.
+PLC 연동과 DB 기록, 웹 시각화까지 포함한 **Computer Vision + 제어 시스템**입니다.
 
 anaconda cv_env1.3.yml 가상환경 설치바랍니다.(GPU 가속 CUDA 필수)
   

@@ -19,7 +19,7 @@ pip install pymysql
 ## 🔧 주요 기능
 
 ### 🎯 1. YOLO 기반 불량 감지 시스템 (`test1_fastapi.py`)
-- **YOLOv5** 모델로 제품의 결함(Dust, Scratch)을 실시간 감지.
+- **YOLOv8** 모델로 제품의 결함(Dust, Scratch)을 실시간 감지.
 - **ROI(관심영역)** 안에 객체가 존재할 경우 **PLC D2001 주소에 Write** → 불량 이벤트 발생.
 - 감지 결과에 따라 DB(`productnum`)에 `inspection` 상태를 `OK` 또는 `NG`로 기록.
 - 검사 완료 시 `OK`, `NG` 테이블로 데이터 분리(이동 + 삭제).

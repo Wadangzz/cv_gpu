@@ -59,12 +59,3 @@ pip install pymysql
 
 [FastAPI] → HTTP로 실시간 영상 스트리밍 제공
 ```
-
----
-
-## 💻 기술 스택
-
-- **Computer Vision**: YOLOv5, OpenCV, MediaPipe
-- **제어/통신**: pymcprotocol (PLC 제어), pymysql
-- **백엔드 서버**: FastAPI + Uvicorn
-- **데이터베이스**: MySQL (`productnum`, `OK`, `NG` 테이블)

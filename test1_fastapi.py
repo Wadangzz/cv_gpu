@@ -42,6 +42,9 @@ if __name__ == "__main__":
     pymc3e.connect("192.168.24.2", 8000)
 
     roi = [170, 0 , 430, 480]
+
+
+
     found_in_roi = False
 
     with pymysql.connect(
@@ -49,13 +52,13 @@ if __name__ == "__main__":
         user = 'product',
         password = '**********',
         database = 'product_db') as conn:
-
+        
         ng = {
             0: {"id": 'Dust',
                 "detected" : False},
             1: {"id": 'Scratch',
                 "detected" : False}
-        }
+            }
 
         # inspect_count = 0
         inspected = False
@@ -87,7 +90,7 @@ if __name__ == "__main__":
                 with conn.cursor() as cursor:
                     col_name = None
                     if boxes.cls.numel() > 0: # 객체가 1개라도 감지되면
-                        for box in boxes.xywh.cpu().numpy()[:2]: # 객체의 중심 좌표를 list compressison
+                        for box in boxes.xywh.cpu().numpy(): # 객체의 중심 좌표를 list compressison
                             if is_center_in_roi(box,roi): # 객체의 boungind box가 roi 안에 있다면
                                 pymc3e.batchwrite_wordunits(headdevice="D2001", values=[1]) # PLC D2001에 1을 쓴다
                         for cls in boxes.cls.cpu().numpy(): # cls ID를 numpy 배열로 변환

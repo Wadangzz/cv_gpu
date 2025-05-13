@@ -8,14 +8,18 @@
 YOLO 객체 인식과 MediaPipe 손 감지를 통해 자동화 라인에서 불량 검출 및 안전 제어를 수행하며,  
 PLC 연동과 DB 기록, 웹 시각화까지 포함한 **Computer Vision + 제어 시스템**입니다.
 
-anaconda cv_env1.3.yml 가상환경 설치바랍니다.(GPU 가속 CUDA 필수)
+anaconda cv_env1.3.yml 가상환경 + 추가 라이브러리 설치바랍니다.(GPU 가속 CUDA 필수)
   
 ```
 conda env create -f cv_env1.3.yml
+```
+
+```
 # 미쓰비시 mc 프로토콜 Library, MySQL Library 설치
 pip install pymcprotocol
 pip install pymysql
 ```
+
 ---
 
 ## 🔧 주요 기능

@@ -40,20 +40,21 @@ if __name__ == "__main__":
     pymc3e = mc.Type3E()
     pymc3e.connect("192.168.24.2", 8000)
 
+    roi = [170, 0 , 430, 480]
+    found_in_roi = False
+
     with pymysql.connect(
         host = '127.0.0.1',
         user = 'product',
         password = '1122334455',
         database = 'product_db') as conn:
 
-        roi = [170, 0 , 430, 480]
-        
         ng = {
             0: {"id": 'Dust',
                 "detected" : False},
             1: {"id": 'Scratch',
                 "detected" : False}
-        }
+            }
 
         # inspect_count = 0
         inspected = False
@@ -83,28 +84,28 @@ if __name__ == "__main__":
 
             if status == INSPECTION_MODE:# and inspect_count < MAX_INSPECT_COUNT:
                 with conn.cursor() as cursor:
-                    try:
-                        col_name = None
-                        if boxes.cls.numel() > 0: # 객체가 1개라도 감지되면
-                            for box in boxes.xywh.cpu().numpy()[:2]: # 객체의 중심 좌표를 list compressison
-                                if is_center_in_roi(box,roi): # 객체의 boungind box가 roi 안에 있다면
-                                    pymc3e.batchwrite_wordunits(headdevice="D2001", values=[1]) # PLC D2001에 1을 쓴다
-                            for cls in boxes.cls.cpu().numpy(): # cls ID를 numpy 배열로 변환
-                                if cls == 0 and ng[0]["detected"] == False:
-                                    col_name = ng[0]["id"] # Dust
-                                    ng[0]["detected"] = True
-                                elif cls == 1 and ng[1]["detected"] == False:
-                                    col_name = ng[1]["id"] # Scratch
-                                    ng[1]["detected"] = True
-                                if not col_name == None:
-                                    cursor.execute(
-                                        f"""
-                                        UPDATE productnum SET {col_name} = %s
-                                        WHERE {col_name} = 0 ORDER BY id ASC LIMIT 1""", (1,))
-                            cursor.execute(
-                                """
-                                UPDATE productnum SET inspection = %s 
-                                ORDER BY id ASC LIMIT 1""", ('NG',))
+                    col_name = None
+                    if boxes.cls.numel() > 0: # 객체가 1개라도 감지되면
+                        for box in boxes.xywh.cpu().numpy()[:2]: # 객체의 중심 좌표를 list compressison
+                            if is_center_in_roi(box,roi): # 객체의 boungind box가 roi 안에 있다면
+                                pymc3e.batchwrite_wordunits(headdevice="D2001", values=[1]) # PLC D2001에 1을 쓴다
+                        for cls in boxes.cls.cpu().numpy(): # cls ID를 numpy 배열로 변환
+                            if cls == 0 and ng[0]["detected"] == False:
+                                col_name = ng[0]["id"] # Dust
+                                ng[0]["detected"] = True
+                            elif cls == 1 and ng[1]["detected"] == False:
+                                col_name = ng[1]["id"] # Scratch
+                                ng[1]["detected"] = True
+                            if not col_name == None:
+                                cursor.execute(
+                                    f"""
+                                    UPDATE productnum SET {col_name} = %s
+                                    WHERE inspection = 'Not Yet' AND {col_name} = 0 ORDER BY id ASC LIMIT 1""", (1,))
+                        cursor.execute(
+                            """
+                            UPDATE productnum SET inspection = %s 
+                            WHERE inspection = 'Not Yet' ORDER BY id ASC LIMIT 1""", ('NG',))
+                        conn.commit()  # 여기서 한 번만 commit
 
                         else:   
                             cursor.execute(

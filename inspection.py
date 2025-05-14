@@ -29,6 +29,24 @@ def video_feed():
 def start_fastapi(app):
     uvicorn.run(app, host="0.0.0.0", port=9000)
 
+def update_ng(cursor,col_name):
+    cursor.execute(f"""
+                    UPDATE productnum SET {col_name} = %s, inspection = %s
+                    WHERE {col_name} = 0 ORDER BY id ASC LIMIT 1""", (1,'NG'))
+    
+def update_ok(cursor):
+    cursor.execute("""
+                    UPDATE productnum SET inspection = %s 
+                    WHERE inspection = 'Not Yet' ORDER BY id ASC LIMIT 1""", ('OK',))
+    
+def movetable(cursor,ins_result):
+    cursor.execute(f"""
+                    INSERT INTO {ins_result} 
+                    (ProductCode, Model, Dust, Scratch, inspection)
+                    SELECT ProductCode, Model, Dust, Scratch, inspection
+                    FROM productnum WHERE inspection = %s LIMIT 1""", (ins_result,))
+    cursor.execute("DELETE FROM productnum WHERE inspection = %s LIMIT 1", (ins_result,))
+
 if __name__ == "__main__":
     
     inspection_thread = threading.Thread(target=start_fastapi,args = (app,),daemon=True)
@@ -73,15 +91,9 @@ if __name__ == "__main__":
                             plc.batchwrite_wordunits(headdevice="D2001", values=[1]) # PLC D2001에 1을 쓴다
                             col_name = yolo.classification(boxes)
                             if not col_name == None:
-                                cursor.execute(
-                                    f"""
-                                    UPDATE productnum SET {col_name} = %s, inspection = %s
-                                    WHERE {col_name} = 0 ORDER BY id ASC LIMIT 1""", (1,'NG'))
+                                update_ng(cursor, col_name)
                         else:   
-                            cursor.execute(
-                                """
-                                UPDATE productnum SET inspection = %s 
-                                WHERE inspection = 'Not Yet' ORDER BY id ASC LIMIT 1""", ('OK',))
+                            update_ok(cursor)
                         conn.commit()
                     except Exception as e:
                         print(f"Mysql Error : {e}")
@@ -98,14 +110,7 @@ if __name__ == "__main__":
                 if not ins_result == None:
                     with conn.cursor() as cursor: # 검사 결과에 따라 해당 제품코드의 정보를 OK, NG 테이블로 이동
                         try:
-                            cursor.execute(
-                                f"""
-                                INSERT INTO {ins_result} 
-                                (ProductCode, Model, Dust, Scratch, inspection)
-                                SELECT ProductCode, Model, Dust, Scratch, inspection
-                                FROM productnum WHERE inspection = %s LIMIT 1""", (ins_result,))
-                            cursor.execute(    
-                                "DELETE FROM productnum WHERE inspection = %s LIMIT 1", (ins_result,))
+                            movetable(cursor, ins_result)
                             conn.commit()
                         except Exception as e:
                             print(f"Mysql Error : {e}")

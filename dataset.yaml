@@ -1,8 +1,0 @@
-path: \\?\C:\Users\wadangzz\Desktop\dataset\YOLODataset
-train: images/train
-val: images/val
-test: images/test
-
-names:
-    0: charger
-    1: 3

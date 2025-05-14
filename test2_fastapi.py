@@ -16,7 +16,7 @@ def encoding():
         if latest_frame is not None:
             _, buffer = cv2.imencode('.jpg', latest_frame)
             yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-            time.sleep(0.1)
+            time.sleep(0.4)
 
 @app.get("/video")
 def video_feed():
@@ -68,9 +68,10 @@ if __name__ == "__main__":
                     break
 
             if found_inside: # Landmark 좌표가 ROI 안에 있을 때
-                pymc3e.batchwrite_wordunits(headdevice="D8", values=[1]) # PLC D8에 1을 쓴다
-                cv2.putText(annotated_img, "Warning : Hands detected. Emergence stop", 
-                            (45, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                if pymc3e.batchread_bitunits(headdevice="M504", readsize=1)[0] == 1: # 자동운전 모드
+                    pymc3e.batchwrite_wordunits(headdevice="D8", values=[1]) # PLC D8에 1을 쓴다
+                    cv2.putText(annotated_img, "Warning : Hands detected. Emergence stop", 
+                                (45, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
         latest_frame = cv2.cvtColor(annotated_img, cv2.COLOR_RGB2BGR)        
         cv2.imshow('CCTV',cv2.cvtColor(annotated_img,cv2.COLOR_RGB2BGR))

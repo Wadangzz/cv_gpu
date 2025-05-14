@@ -1,15 +1,12 @@
-import MyModule.myhandlandmark as ml
-import MyModule.object as object
 import numpy as np
 import cv2
 from ultralytics import YOLO
-from ultralytics.engine.results import Results
 
-model = YOLO('./MyModule/mytrained3.pt')
+model = YOLO('./runs/detect/project2_1/weights/best.pt')
 # hand = ml.handtracking()
 # obj = object.Object()
     
-frame = cv2.imread('C:/Users/wadangzz/Desktop/dataset/YOLODataset/images/train/000386.jpg')
+frame = cv2.imread('C:/Users/user/Documents/GitHub/cv_gpu/dataset/Project_test2/images/train/000025.jpg')
 
 height, width, _ = frame.shape
 img = cv2.GaussianBlur(frame, (5, 5), 0)
@@ -32,7 +29,7 @@ contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
 cnt = max(contours, key=cv2.contourArea)
 rect = cv2.minAreaRect(cnt)
 box = cv2.boxPoints(rect)
-box = np.int0(box)
+box = np.intp(box)
 (center), (w, h), angle = rect
 if w < h:
     angle = angle

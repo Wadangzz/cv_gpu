@@ -1,7 +1,9 @@
+""" YOLOv8 Object Detection with ONNX Runtime
+    - YOLOv8 모델을 ONNX Runtime으로 변환하여 사용(coco.names)"""
+
 import onnxruntime as ort
 import numpy as np
 import cv2
-
 
 class Object():
     
@@ -50,7 +52,7 @@ class Object():
         # 모델 예측 실행
         outputs = self.session.run(self.output_names, {self.input_name: _img})
         outs = outputs[0][0].T  # (84, 3549) → (3549, 84)
-        # YOLOv3에 있는 4번째 index 객체 존재 신뢰도값이 없음 85 -> 84
+        # YOLOv3에 있는 4번째 index 객체 신뢰도값이 YOLOv8에는 없음 (length 85 -> 84)
 
         for detection in outs:
             class_probs = detection[4:]  # 80개 클래스 확률
@@ -71,7 +73,6 @@ class Object():
                 class_ids.append(class_id) # 객체의 인덱스 번호 append
 
         indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4) # 겹치는 박스 제거
-
 
         # 바운딩 박스 그리기
         for i in range(len(boxes)):

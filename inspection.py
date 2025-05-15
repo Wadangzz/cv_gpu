@@ -4,10 +4,10 @@ import threading
 import uvicorn
 import pymcprotocol as mc
 import pymysql
-from detection import Detection
 from ultralytics import YOLO
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
+from MyModule.detection import Detection
 
 app = FastAPI()
 # 최신 프레임 저장용 전역 변수
@@ -21,6 +21,7 @@ def encoding():
             yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
             time.sleep(0.4)
 
+# FastAPI 라우트: MJPEG 스트리밍
 @app.get("/video")
 def video_feed():
     return StreamingResponse(encoding(), media_type='multipart/x-mixed-replace; boundary=frame')
@@ -29,16 +30,18 @@ def video_feed():
 def start_fastapi(app):
     uvicorn.run(app, host="0.0.0.0", port=9000)
 
+# 불량품 판별 후 DB 업데이트
 def update_ng(cursor,col_name):
     cursor.execute(f"""
                     UPDATE productnum SET {col_name} = %s, inspection = %s
                     WHERE {col_name} = 0 ORDER BY id ASC LIMIT 1""", (1,'NG'))
-    
+# 양품 판별 후 DB 업데이트    
 def update_ok(cursor):
     cursor.execute("""
                     UPDATE productnum SET inspection = %s 
                     WHERE inspection = 'Not Yet' ORDER BY id ASC LIMIT 1""", ('OK',))
-    
+
+# 제품 검사 결과에 따라 해당 제품코드의 정보를 OK, NG 테이블로 이동    
 def movetable(cursor,ins_result):
     cursor.execute(f"""
                     INSERT INTO {ins_result} 
@@ -50,13 +53,13 @@ def movetable(cursor,ins_result):
 if __name__ == "__main__":
     
     inspection_thread = threading.Thread(target=start_fastapi,args = (app,),daemon=True)
-    inspection_thread.start()
+    inspection_thread.start() # FastAPI 실행을 위한 서브스레드 시작
     
-    plc = mc.Type3E()
+    plc = mc.Type3E() # PLC 통신 초기화 (Type3E 방식 사용, Q03UDE와의 연결)
     plc.connect("192.168.24.2", 8000)
 
-    inspected = False
-    roi = [170, 0 , 430, 480]
+    inspected = False # 검사 완료 여부
+    roi = [170, 0 , 430, 480] # ROI 좌표
 
     INSPECTION_MODE = 36
     INSPECTION_COMPLETE = 37
@@ -66,13 +69,14 @@ if __name__ == "__main__":
         user = 'product',
         password = '1122334455',
         database = 'product_db') as conn:
-
+        
+        # YOLOv8 모델 로드
         model = YOLO('./runs/detect/project2_1/weights/best.pt')
-        cap = cv2.VideoCapture(0)
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        delay = int(1000 / fps)
+        cap = cv2.VideoCapture(0) # 카메라 열기 (0번 장치)
+        fps = cap.get(cv2.CAP_PROP_FPS) # 초당 프레임 수
+        delay = int(1000 / fps) # 프레임 지연 시간
 
-        yolo = Detection(model,cap,roi)
+        yolo = Detection(model,roi) # YOLO 객체 생성
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -87,26 +91,25 @@ if __name__ == "__main__":
             if status == INSPECTION_MODE:
                 with conn.cursor() as cursor:
                     try:
-                        if yolo.isdetected(boxes):
+                        if yolo.is_detected_in_roi(boxes):
                             plc.batchwrite_wordunits(headdevice="D2001", values=[1]) # PLC D2001에 1을 쓴다
                             col_name = yolo.classification(boxes)
                             if not col_name == None:
-                                update_ng(cursor, col_name)
+                                update_ng(cursor, col_name) # col_name에 해당하는 불량품 DB 업데이트
                         else:   
-                            update_ok(cursor)
+                            update_ok(cursor) # 양품 DB 업데이트
                         conn.commit()
                     except Exception as e:
                         print(f"Mysql Error : {e}")
                         conn.rollback()
 
             if status == INSPECTION_COMPLETE and inspected == False:
-                # inspect_count = 0
                 ins_result = None
                 for i in range(2):
                     yolo.ng[i]["detected"] = False # 객체 감지 결과를 리셋
                 inspected = True
                 decision = plc.batchread_wordunits(headdevice="D2001",readsize=1)[0]
-                ins_result = yolo.inspection(decision)
+                ins_result = yolo.get_inspection_result(decision)
                 if not ins_result == None:
                     with conn.cursor() as cursor: # 검사 결과에 따라 해당 제품코드의 정보를 OK, NG 테이블로 이동
                         try:

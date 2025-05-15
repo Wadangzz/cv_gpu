@@ -3,7 +3,6 @@ import numpy as np
 
 class Vision():
 
-
     def __init__(self):
 
         # YOLO 모델 및 설정 파일 경로 (실제 경로로 변경 필요)
